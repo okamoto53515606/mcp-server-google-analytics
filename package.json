@@ -49,10 +49,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/okamoto53515606/mcp-server-google-analytics"
+    "url": "git+https://github.com/okamoto53515606/mcp-server-google-analytics.git"
   },
   "bin": {
-    "mcp-server-ga4": "./dist/index.js"
+    "mcp-server-ga4": "dist/index.js"
   },
   "files": [
     "dist/**/*",
