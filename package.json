@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-ga4",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Google Analytics 4 (GA4) MCP サーバー - ADC対応版。サービスアカウント認証とApplication Default Credentials の両方をサポート",
   "main": "dist/index.js",
   "scripts": {
