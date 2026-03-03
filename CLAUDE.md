@@ -1,81 +1,84 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは Claude Code (claude.ai/code) がこのリポジトリで作業する際のガイダンスを提供します。
 
-## Essential Commands
+## 基本コマンド
 
-### Build and Development
-- `pnpm build` - Compile TypeScript to JavaScript (output in `dist/`)
-- `pnpm dev` - Run the server in development mode with ts-node
-- `pnpm start` - Start the compiled server from `dist/index.js`
+### ビルド・開発
+- `pnpm build` - TypeScript を JavaScript にコンパイル（出力先: `dist/`）
+- `pnpm dev` - ts-node で開発モード起動
+- `pnpm start` - コンパイル済みの `dist/index.js` を起動
 
-### Testing
-- `pnpm test` - Run Vitest tests from the `tests/` directory
-- Tests are configured with Vitest and target Node.js environment
+### テスト
+- `pnpm test` - `tests/` ディレクトリの Vitest テストを実行
+- Vitest で構成、Node.js 環境をターゲット
 
-### Code Quality
-- `pnpm lint` - Run Biome linter on `src/` directory
-- `pnpm format` - Format code with Biome (writes changes)
-- `pnpm check` - Run Biome check and apply fixes automatically
+### コード品質
+- `pnpm lint` - `src/` ディレクトリに Biome リンターを実行
+- `pnpm format` - Biome でコードフォーマット（書き込みあり）
+- `pnpm check` - Biome チェックを実行し自動修正
 
-## Project Architecture
+## プロジェクトアーキテクチャ
 
-### Core Structure
-This is a Model Context Protocol (MCP) server that provides Google Analytics 4 data access. The architecture consists of:
+### コア構造
+Google Analytics 4 データにアクセスする Model Context Protocol (MCP) サーバーです。
 
-**Single Entry Point**: `src/index.ts` contains the entire server implementation using:
-- `@modelcontextprotocol/sdk` for MCP server functionality
-- `@google-analytics/data` for GA4 API access
-- `googleapis` for Google Cloud authentication
+**単一エントリポイント**: `src/index.ts` にサーバー実装全体を含む:
+- `@modelcontextprotocol/sdk` — MCP サーバー機能
+- `@google-analytics/data` — GA4 API アクセス
 
-**Server Pattern**: The server uses:
-- `StdioServerTransport` for communication
-- Request handlers for `ListToolsRequestSchema` and `CallToolRequestSchema`
-- Environment variable validation on startup
+**認証方式**: 2 つの認証方式をサポート:
+- **ADC (Application Default Credentials)** — `GA_PROPERTY_ID` のみで動作（推奨）
+- **サービスアカウント秘密鍵** — `GOOGLE_CLIENT_EMAIL` + `GOOGLE_PRIVATE_KEY` + `GA_PROPERTY_ID`
 
-### Tool Implementation
-The server exposes 5 main tools through the MCP protocol:
+**サーバーパターン**:
+- `StdioServerTransport` で通信
+- `ListToolsRequestSchema` と `CallToolRequestSchema` のリクエストハンドラ
+- 起動時の環境変数バリデーション
 
-1. **runReport** - Generic analytics report runner with custom dimensions and metrics
-2. **getPageViews** - Page view metrics with optional dimensions
-3. **getActiveUsers** - Active and new user counts over time
-4. **getEvents** - Event tracking with optional event name filtering
-5. **getUserBehavior** - Session duration, bounce rate, and sessions per user
+### ツール実装
+MCP プロトコル経由で 5 つのツールを公開:
 
-Each tool follows the pattern:
-- Date range validation (YYYY-MM-DD format)
-- Google Analytics API call via `analyticsDataClient.runReport()`
-- JSON response formatting
-- Comprehensive error handling with `McpError`
+1. **runReport** — カスタムディメンション・メトリクスによる汎用レポート
+2. **getPageViews** — ページビュー指標（オプションのディメンション付き）
+3. **getActiveUsers** — アクティブユーザー・新規ユーザー数の推移
+4. **getEvents** — イベント追跡（イベント名フィルタ対応）
+5. **getUserBehavior** — セッション時間、直帰率、ユーザーあたりセッション数
 
-### Environment Requirements
-The server requires these environment variables:
-- `GOOGLE_CLIENT_EMAIL` - Service account email
-- `GOOGLE_PRIVATE_KEY` - Service account private key
-- `GA_PROPERTY_ID` - Google Analytics 4 property ID
+各ツールのパターン:
+- 日付範囲バリデーション（YYYY-MM-DD 形式）
+- `analyticsDataClient.runReport()` による GA API 呼び出し
+- JSON レスポンスフォーマット
+- `McpError` による包括的エラーハンドリング
 
-### Error Handling
-- Environment validation occurs at startup
-- Date format and range validation for all tools
-- Google Analytics API errors are wrapped in `McpError`
-- Process-level handlers for uncaught exceptions and unhandled rejections
+### 環境変数
+- `GA_PROPERTY_ID`（必須） — Google Analytics 4 プロパティ ID
+- `GOOGLE_APPLICATION_CREDENTIALS`（任意） — ADC クレデンシャルファイルまたはサービスアカウント JSON キーファイルのパス
+- `GOOGLE_CLIENT_EMAIL`（任意） — サービスアカウントメール
+- `GOOGLE_PRIVATE_KEY`（任意） — サービスアカウント秘密鍵
 
-## Development Notes
+### エラーハンドリング
+- 起動時に環境変数を検証
+- 全ツールで日付形式・範囲をバリデーション
+- Google Analytics API エラーは `McpError` でラップ
+- プロセスレベルの未キャッチ例外・未処理 Promise 拒否ハンドラ
 
-### TypeScript Configuration
-- Strict mode enabled with comprehensive type checking
-- ES2020 target with CommonJS modules
-- Source maps and declarations generated
-- Tests excluded from compilation
+## 開発メモ
 
-### Code Style
-- Biome for linting and formatting
-- Double quotes for strings
-- Space indentation
-- Import organization enabled
+### TypeScript 設定
+- strict モード有効（包括的な型チェック）
+- ES2020 ターゲット、CommonJS モジュール
+- ソースマップと宣言ファイルを生成
+- テストはコンパイル対象外
 
-### Testing Setup
-- Vitest with TypeScript support
-- Tests in dedicated `tests/` directory
-- Coverage reporting configured for `src/` files with v8 provider
-- Node.js test environment
+### コードスタイル
+- Biome によるリント・フォーマット
+- ダブルクォート
+- スペースインデント
+- インポート整理有効
+
+### テスト設定
+- Vitest + TypeScript サポート
+- `tests/` ディレクトリにテストを配置
+- `src/` ファイルのカバレッジレポート（v8 プロバイダ）
+- Node.js テスト環境

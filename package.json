@@ -1,7 +1,7 @@
 {
-  "name": "mcp-server-google-analytics",
-  "version": "1.1.0",
-  "description": "Google Analytics MCP server for accessing web analytics data",
+  "name": "mcp-server-ga4",
+  "version": "1.0.0",
+  "description": "Google Analytics 4 (GA4) MCP サーバー - ADC対応版。サービスアカウント認証とApplication Default Credentials の両方をサポート",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -11,13 +11,12 @@
     "lint": "biome lint src/",
     "format": "biome format src/ --write",
     "check": "biome check src/ --apply",
-    "prepare": "husky"
+    "prepublishOnly": "tsc"
   },
   "dependencies": {
     "@google-analytics/data": "^4.0.0",
     "@modelcontextprotocol/sdk": "^1.0.1",
-    "dotenv": "^17.2.0",
-    "googleapis": "^126.0.1"
+    "dotenv": "^17.2.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
@@ -38,18 +37,22 @@
   },
   "keywords": [
     "mcp",
+    "ga4",
     "google-analytics",
+    "google-analytics-4",
     "analytics",
+    "adc",
+    "application-default-credentials",
     "server"
   ],
-  "author": "Ru Chen Chong <hello@ruchern.dev>",
+  "author": "okamoto53515606",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ruchernchong/mcp-server-google-analytics"
+    "url": "https://github.com/okamoto53515606/mcp-server-google-analytics"
   },
   "bin": {
-    "mcp-server-google-analytics": "./dist/index.js"
+    "mcp-server-ga4": "./dist/index.js"
   },
   "files": [
     "dist/**/*",

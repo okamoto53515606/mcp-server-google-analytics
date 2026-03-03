@@ -13,11 +13,9 @@ import "dotenv/config";
 
 import RunReportRequest = google.analytics.data.v1beta.RunReportRequest;
 
-// Validate environment variables
+// 環境変数の検証
 function validateEnvironment(): void {
   const requiredEnvVars = [
-    "GOOGLE_CLIENT_EMAIL",
-    "GOOGLE_PRIVATE_KEY",
     "GA_PROPERTY_ID",
   ];
 
@@ -27,12 +25,12 @@ function validateEnvironment(): void {
 
   if (missingVars.length > 0) {
     throw new Error(
-      `Missing required environment variables: ${missingVars.join(", ")}`,
+      `必須の環境変数が設定されていません: ${missingVars.join(", ")}`,
     );
   }
 }
 
-// Validate date format (YYYY-MM-DD)
+// 日付形式の検証 (YYYY-MM-DD)
 function validateDateFormat(date: string): boolean {
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(date)) {
@@ -43,7 +41,7 @@ function validateDateFormat(date: string): boolean {
   return parsedDate.toISOString().split("T")[0] === date;
 }
 
-// Validate date range
+// 日付範囲の検証
 function validateDateRange(startDate: string, endDate: string): void {
   if (!validateDateFormat(startDate)) {
     throw new McpError(
@@ -67,20 +65,27 @@ function validateDateRange(startDate: string, endDate: string): void {
   }
 }
 
-// Initialize environment validation
+// 環境変数の検証を実行
 validateEnvironment();
 
-// Initialize the Google Analytics Data client
-const analyticsDataClient = new BetaAnalyticsDataClient({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL as string,
-    private_key: process.env.GOOGLE_PRIVATE_KEY as string,
-  },
-});
+// クライアントオプションの準備
+// GOOGLE_CLIENT_EMAIL と GOOGLE_PRIVATE_KEY が設定されていればサービスアカウント認証を使用し、
+// 未設定の場合は Application Default Credentials (ADC) にフォールバックする
+const clientOptions: ConstructorParameters<typeof BetaAnalyticsDataClient>[0] = {};
+
+if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+  clientOptions.credentials = {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  };
+}
+
+// Google Analytics Data クライアントの初期化
+const analyticsDataClient = new BetaAnalyticsDataClient(clientOptions);
 
 const propertyId = process.env.GA_PROPERTY_ID as string;
 
-// Create the server
+// サーバーの作成
 const server = new Server(
   {
     name: "google-analytics-server",
@@ -93,7 +98,7 @@ const server = new Server(
   },
 );
 
-// Validate and fetch analytics data
+// アナリティクスデータの取得
 async function fetchAnalyticsData(
   reportConfig: Partial<Omit<RunReportRequest, "property">> & {
     dateRanges: RunReportRequest["dateRanges"];
@@ -115,7 +120,7 @@ async function fetchAnalyticsData(
       ],
     };
   } catch (error) {
-    // Handle Google Analytics API errors
+    // Google Analytics API エラーの処理
     if (error instanceof Error) {
       throw new McpError(
         ErrorCode.InternalError,
@@ -126,7 +131,7 @@ async function fetchAnalyticsData(
   }
 }
 
-// List available tools
+// 利用可能なツールの一覧
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -260,7 +265,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// Handle tool calls
+// ツール呼び出しの処理
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
@@ -380,25 +385,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Error handling for server startup
+// サーバー起動時のエラーハンドリング
 process.on("uncaughtException", (error) => {
-  console.error("Uncaught exception:", error);
+  console.error("未キャッチの例外:", error);
   process.exit(1);
 });
 
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled rejection at:", promise, "reason:", reason);
+  console.error("未処理のPromise拒否:", promise, "理由:", reason);
   process.exit(1);
 });
 
-// Start the server
+// サーバーの起動
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Google Analytics MCP server running on stdio");
+  console.error("Google Analytics MCP サーバーが stdio で起動しました");
 }
 
 main().catch((error) => {
-  console.error("Failed to start server:", error);
+  console.error("サーバーの起動に失敗しました:", error);
   process.exit(1);
 });
